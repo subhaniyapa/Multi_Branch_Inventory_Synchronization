@@ -72,6 +72,62 @@ public final class SQLiteInventoryRepository implements InventoryRepository {
         }
     }
 
+    /**
+     * Creates a small laptop-shop dataset only when the database has no stock rows.
+     * The whole seed is atomic and will not reset stock on later server starts.
+     */
+    public void initializeDemoDataIfEmpty() {
+        inTransaction(c -> {
+            try (Statement statement = c.createStatement();
+                 ResultSet result = statement.executeQuery("SELECT COUNT(*) FROM branch_stock")) {
+                if (result.next() && result.getInt(1) > 0) return null;
+            }
+
+            String[] branches = {"Kandy", "Colombo", "Galle"};
+            try (PreparedStatement p = c.prepareStatement("INSERT OR IGNORE INTO branches(branch_id) VALUES (?)")) {
+                for (String branch : branches) {
+                    p.setString(1, branch);
+                    p.addBatch();
+                }
+                p.executeBatch();
+            }
+
+            String[][] products = {
+                    {"LP001", "Dell Inspiron 15"},
+                    {"LP002", "HP Pavilion 14"},
+                    {"LP003", "Lenovo ThinkPad E14"}
+            };
+            try (PreparedStatement p = c.prepareStatement(
+                    "INSERT OR IGNORE INTO products(product_id, product_name) VALUES (?, ?)")) {
+                for (String[] product : products) {
+                    p.setString(1, product[0]);
+                    p.setString(2, product[1]);
+                    p.addBatch();
+                }
+                p.executeBatch();
+            }
+
+            int[][] quantities = {
+                    {5, 4, 3}, // Kandy
+                    {8, 6, 5}, // Colombo
+                    {3, 2, 2}  // Galle
+            };
+            try (PreparedStatement p = c.prepareStatement(
+                    "INSERT INTO branch_stock(branch_id, product_id, quantity) VALUES (?, ?, ?)")) {
+                for (int branchIndex = 0; branchIndex < branches.length; branchIndex++) {
+                    for (int productIndex = 0; productIndex < products.length; productIndex++) {
+                        p.setString(1, branches[branchIndex]);
+                        p.setString(2, products[productIndex][0]);
+                        p.setInt(3, quantities[branchIndex][productIndex]);
+                        p.addBatch();
+                    }
+                }
+                p.executeBatch();
+            }
+            return null;
+        });
+    }
+
     @Override
     public List<InventoryItem> findAllStock() {
         List<InventoryItem> items = new ArrayList<>();
