@@ -59,7 +59,20 @@ The application can be demonstrated using three computers on the same local netw
 - Java
 - Java socket programming
 - Java concurrency utilities
-- Persistent storage/database approach to be finalized by the group
+- SQLite database accessed through Java JDBC (database file is stored on the server computer)
+
+## Member 2 Inventory Module
+
+The initial inventory implementation is under `src/main/java/lk/ruhuna/network/inventory/`:
+
+- `InventoryService` applies stock validation and serializes mutations in the server process.
+- `SQLiteInventoryRepository` persists branches, products, and per-branch stock. Stock transfers use a database transaction so the source deduction and destination addition commit or roll back together.
+- `InventoryResult` returns success/failure and the affected stock rows for the server to format as `SUCCESS`, `ERROR`, and `UPDATE` protocol messages.
+- `InventoryRepository` is the storage boundary used to connect the inventory module to the server and future storage alternatives.
+
+The server can start the inventory module with `InventoryService inventory = InventoryModule.openDefault();`. This creates `data/inventory.db` beside the server's working directory and inserts demo data on the first startup only: three branches (Kandy, Colombo, Galle) and three laptop models (Dell Inspiron 15, HP Pavilion 14, Lenovo ThinkPad E14). The demo quantities are editable in `SQLiteInventoryRepository.initializeDemoDataIfEmpty()`.
+
+Clients must access inventory through the TCP server rather than opening the database file directly. The project uses Maven to download the SQLite JDBC driver.
 
 ## Project Status
 
