@@ -10,11 +10,27 @@ import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 public class BranchClient {
-
-    private static final String SERVER_HOST = "127.0.0.1";
-    private static final int SERVER_PORT = 5000;
-
+    private static String serverHost = "127.0.0.1";
+    private static int serverPort = 5000;
+    
     public static void main(String[] args) {
+        if (args.length > 0) {
+    serverHost = args[0];
+}
+
+if (args.length > 1) {
+    try {
+        serverPort = Integer.parseInt(args[1]);
+
+        if (serverPort < 1 || serverPort > 65535) {
+            System.out.println("Invalid port number. Use 1-65535.");
+            return;
+        }
+    } catch (NumberFormatException e) {
+        System.out.println("Invalid port number. Enter a valid integer.");
+        return;
+    }
+}
 
         Scanner scanner = new Scanner(System.in);
 
@@ -31,7 +47,8 @@ public class BranchClient {
         System.out.println("Connecting to server...");
 
         try (
-            Socket socket = new Socket(SERVER_HOST, SERVER_PORT);
+            
+            Socket socket = new Socket(serverHost, serverPort);
 
             BufferedReader input = new BufferedReader(
                 new InputStreamReader(
